@@ -1,0 +1,45 @@
+[project]
+name = "extraction-validation-engine"
+version = "0.1.0"
+description = "AI-powered reinforced concrete extraction and validation engine"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "google-genai>=1.51.0",
+    "numpy>=1.26.0",
+    "geomdl>=5.3.1",
+    "motor>=3.6.0",  # Async MongoDB driver
+    "python-multipart>=0.0.12",  # For file uploads
+    "pillow>=10.0.0",  # Image processing
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "black>=24.0.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

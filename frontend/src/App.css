@@ -1,0 +1,94 @@
+/* File: frontend/src/App.css */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-header {
+  background-color: #222;
+  padding: 1rem 2rem;
+  border-bottom: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-header h1 {
+  margin: 0;
+  color: #4a90e2;
+  font-size: 1.5rem;
+}
+
+.app-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: #b0b0b0;
+  font-size: 0.9rem;
+}
+
+.btn-reset {
+  padding: 0.5rem 1rem;
+  background-color: #cc3333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-reset:hover {
+  background-color: #aa2222;
+}
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.workspace-viewer {
+  background-color: #1a1a1a;
+  overflow: hidden;
+}
+
+.workspace-sidebar {
+  background-color: #2a2a2a;
+  border-left: 2px solid #444;
+  overflow-y: auto;
+}
+
+.app-footer {
+  background-color: #222;
+  padding: 0.75rem 2rem;
+  border-top: 2px solid #444;
+  text-align: center;
+}
+
+.app-footer p {
+  margin: 0;
+  color: #808080;
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 400px;
+  }
+
+  .workspace-sidebar {
+    border-left: none;
+    border-top: 2px solid #444;
+  }
+}
