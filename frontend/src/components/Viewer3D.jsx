@@ -6,13 +6,28 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, PerspectiveCamera } from '@react-three/drei';
+import * as THREE from 'three';
 import { useExtractionStore } from '../store/useExtractionStore';
 import './Viewer3D.css';
 
 // Longitudinal bar component
-function LongitudinalBar({ barData }) {
-  const start = [barData.start.x, barData.start.y, barData.start.z];
-  const end = [barData.end.x, barData.end.y, barData.end.z];
+function LongitudinalBar({ barData, section }) {
+  // Transform coordinates: Engineering Z-up to Three.js Y-up
+  // [x, y, z] backend -> [x, z, y] Three.js (Y is up, Z is depth)
+  // Apply centering offset to align with ConcreteSection
+  const offsetX = -section.width_mm / 2;
+  const offsetZ = -section.depth_mm / 2;
+
+  const start = [
+    barData.start.x + offsetX,
+    barData.start.z,
+    barData.start.y + offsetZ
+  ];
+  const end = [
+    barData.end.x + offsetX,
+    barData.end.z,
+    barData.end.y + offsetZ
+  ];
   const radius = barData.diameter_mm / 2;
 
   // Calculate bar direction and length
@@ -30,7 +45,7 @@ function LongitudinalBar({ barData }) {
 
   return (
     <group position={midpoint}>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <mesh>
         <cylinderGeometry args={[radius, radius, length, 16]} />
         <meshStandardMaterial color="#cc3333" roughness={0.4} metalness={0.6} />
       </mesh>
@@ -40,7 +55,8 @@ function LongitudinalBar({ barData }) {
 
 // Stirrup component
 function Stirrup({ stirrupData }) {
-  const points = stirrupData.path.map((pt) => [pt.x, pt.y, pt.z]);
+  // Transform coordinates: Engineering Z-up to Three.js Y-up
+  const points = stirrupData.path.map((pt) => [pt.x, pt.z, pt.y]);
   const radius = stirrupData.diameter_mm / 2;
 
   return (
@@ -58,12 +74,14 @@ function Stirrup({ stirrupData }) {
           (start[2] + end[2]) / 2,
         ];
 
-        // Calculate rotation angle
-        const angle = Math.atan2(dy, dx);
+        // Calculate rotation to align cylinder with segment direction
+        const direction = new THREE.Vector3(dx, dy, dz).normalize();
+        const axis = new THREE.Vector3(0, 1, 0).cross(direction).normalize();
+        const angle = Math.acos(new THREE.Vector3(0, 1, 0).dot(direction));
 
         return (
           <group key={idx} position={midpoint}>
-            <mesh rotation={[0, 0, angle]}>
+            <mesh rotation={[axis.x * angle, axis.y * angle, axis.z * angle]}>
               <cylinderGeometry args={[radius, radius, length, 8]} />
               <meshStandardMaterial
                 color="#3399ff"
@@ -84,17 +102,17 @@ function ConcreteSection({ section }) {
 
   return (
     <group>
-      {/* Bottom face */}
-      <lineSegments>
+      {/* Bottom face (XZ plane at Y=0) */}
+      <lineSegments rotation={[Math.PI / 2, 0, 0]}>
         <edgesGeometry
           args={[new THREE.BoxGeometry(width_mm, depth_mm, 1)]}
         />
         <lineBasicMaterial color="#666666" linewidth={2} />
       </lineSegments>
 
-      {/* Top face */}
-      <group position={[0, 0, height_mm]}>
-        <lineSegments>
+      {/* Top face (XZ plane at Y=height) */}
+      <group position={[0, height_mm, 0]}>
+        <lineSegments rotation={[Math.PI / 2, 0, 0]}>
           <edgesGeometry
             args={[new THREE.BoxGeometry(width_mm, depth_mm, 1)]}
           />
@@ -102,14 +120,14 @@ function ConcreteSection({ section }) {
         </lineSegments>
       </group>
 
-      {/* Vertical edges */}
+      {/* Vertical edges (along Y-axis) */}
       {[
-        [-width_mm / 2, -depth_mm / 2],
-        [width_mm / 2, -depth_mm / 2],
-        [width_mm / 2, depth_mm / 2],
         [-width_mm / 2, depth_mm / 2],
-      ].map(([x, y], idx) => (
-        <mesh key={idx} position={[x, y, height_mm / 2]}>
+        [width_mm / 2, depth_mm / 2],
+        [width_mm / 2, -depth_mm / 2],
+        [-width_mm / 2, -depth_mm / 2],
+      ].map(([x, z], idx) => (
+        <mesh key={idx} position={[x, height_mm / 2, z]}>
           <cylinderGeometry args={[0.5, 0.5, height_mm, 8]} />
           <meshBasicMaterial color="#666666" />
         </mesh>
@@ -140,35 +158,36 @@ function Scene() {
       <pointLight position={[1000, 1000, 1000]} intensity={0.8} />
       <pointLight position={[-1000, -1000, 500]} intensity={0.4} />
 
-      {/* Center geometry at origin */}
-      <group position={[-section.width_mm / 2, -section.depth_mm / 2, 0]}>
+      {/* All geometry in one group (no offset - section will handle its own centering) */}
+      <group>
         {/* Concrete section outline */}
         <ConcreteSection section={section} />
 
         {/* Longitudinal bars */}
         {longitudinal_bars.map((bar, idx) => (
-          <LongitudinalBar key={`bar-${idx}`} barData={bar} />
+          <LongitudinalBar key={`bar-${idx}`} barData={bar} section={section} />
         ))}
 
         {/* Stirrups */}
         {stirrups.map((stirrup, idx) => (
-          <Stirrup key={`stirrup-${idx}`} stirrupData={stirrup} />
+          <Stirrup key={`stirrup-${idx}`} stirrupData={stirrup} section={section} />
         ))}
       </group>
 
-      {/* Grid helper */}
+      {/* Grid helper (on ground plane Y=0) */}
       <Grid
-        args={[10000, 10000]}
+        args={[20000, 20000]}
         cellSize={500}
         cellThickness={1}
         cellColor="#444444"
         sectionSize={1000}
         sectionThickness={1.5}
         sectionColor="#666666"
-        fadeDistance={15000}
-        fadeStrength={1}
+        fadeDistance={25000}
+        fadeStrength={0.5}
         infiniteGrid
-        position={[0, 0, -10]}
+        position={[0, -10, 0]}
+        rotation={[0, 0, 0]}
       />
     </group>
   );
@@ -186,16 +205,28 @@ export default function Viewer3D() {
         </div>
       ) : geometry ? (
         <Canvas shadows>
-          <PerspectiveCamera makeDefault position={[2000, 2000, 1500]} fov={50} />
+          <PerspectiveCamera
+            makeDefault
+            position={[1500, 1500, 2000]}
+            fov={60}
+            near={10}
+            far={50000}
+          />
           <Suspense fallback={null}>
             <Scene />
           </Suspense>
           <OrbitControls
-            enablePan
-            enableZoom
-            enableRotate
-            minDistance={500}
-            maxDistance={10000}
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            target={[0, 1500, 0]}
+            minDistance={800}
+            maxDistance={6000}
+            zoomSpeed={0.5}
+            panSpeed={0.5}
+            rotateSpeed={0.4}
+            dampingFactor={0.08}
+            enableDamping={true}
           />
         </Canvas>
       ) : (

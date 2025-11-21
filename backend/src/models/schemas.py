@@ -24,7 +24,7 @@ class SpacingItem(BaseModel):
     )
     spacing: float = Field(
         ...,
-        gt=0,
+        ge=0.001,
         description="Spacing distance in millimeters"
     )
 
@@ -46,12 +46,12 @@ class StirrupDimensions(BaseModel):
     """Internal clear dimensions that a stirrup/tie encloses."""
     span_width_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Internal clear width the tie encloses"
     )
     span_depth_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Internal clear depth the tie encloses"
     )
 
@@ -73,7 +73,7 @@ class TransverseReinforcement(BaseModel):
     ]
     bar_diameter_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Bar diameter in millimeters"
     )
     stirrup_dimensions: Optional[StirrupDimensions] = None
@@ -111,12 +111,12 @@ class LongitudinalReinforcement(BaseModel):
     )
     bar_diameter_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Bar diameter in millimeters"
     )
     bar_count: int = Field(
         ...,
-        gt=0,
+        ge=1,
         description="Total number of bars (required)"
     )
     reference_code: str = Field(
@@ -171,7 +171,7 @@ class ConcreteSpecs(BaseModel):
     )
     clear_cover_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Clear cover to reinforcement (required for 3D)"
     )
 
@@ -186,17 +186,17 @@ class Geometry(BaseModel):
     ]
     width_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Width for rectangular sections"
     )
     depth_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Depth for rectangular sections"
     )
     diameter_mm: Optional[float] = Field(
         None,
-        gt=0,
+        ge=0.001,
         description="Diameter for circular sections"
     )
 

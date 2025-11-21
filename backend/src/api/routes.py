@@ -129,7 +129,15 @@ async def generate_geometry(
         3D geometry data ready for Three.js visualization
     """
     try:
+        import sys
+        import json
         height = column_height_mm or settings.DEFAULT_COLUMN_HEIGHT_MM
+
+        print(f"\n{'='*80}", flush=True)
+        print(f"DEBUG: Full extraction_data:", flush=True)
+        print(json.dumps(extraction_data, indent=2, default=str), flush=True)
+        print(f"{'='*80}\n", flush=True)
+        sys.stdout.flush()
 
         calculator = GeometryCalculator(column_height_mm=height)
         geometry = calculator.generate_complete_geometry(extraction_data)
@@ -140,9 +148,15 @@ async def generate_geometry(
         }
 
     except Exception as e:
+        import traceback
+        error_details = {
+            "error": str(e),
+            "type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
         raise HTTPException(
             status_code=500,
-            detail=f"Geometry generation failed: {str(e)}"
+            detail=error_details
         )
 
 

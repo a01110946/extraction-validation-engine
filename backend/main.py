@@ -19,11 +19,11 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events.
     """
     # Startup
-    print("🚀 Starting Extraction Validation Engine...")
+    print(">> Starting Extraction Validation Engine...")
     await database.connect()
     yield
     # Shutdown
-    print("👋 Shutting down...")
+    print(">> Shutting down...")
     await database.disconnect()
 
 

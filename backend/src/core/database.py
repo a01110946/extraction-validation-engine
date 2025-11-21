@@ -17,13 +17,13 @@ class Database:
         """Connect to MongoDB."""
         self.client = AsyncIOMotorClient(settings.MONGODB_URL)
         self.db = self.client[settings.MONGODB_DATABASE]
-        print(f"✅ Connected to MongoDB: {settings.MONGODB_DATABASE}")
+        print(f">> Connected to MongoDB: {settings.MONGODB_DATABASE}")
 
     async def disconnect(self) -> None:
         """Disconnect from MongoDB."""
         if self.client:
             self.client.close()
-            print("✅ Disconnected from MongoDB")
+            print(">> Disconnected from MongoDB")
 
     def get_collection(self, name: str):
         """Get a collection by name."""

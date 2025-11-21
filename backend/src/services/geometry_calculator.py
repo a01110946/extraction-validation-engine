@@ -264,14 +264,35 @@ class GeometryCalculator:
         Returns:
             Dictionary containing all geometry ready for Three.js
         """
-        geometry = extraction_data["geometry"]
-        concrete_specs = extraction_data.get("concrete_specifications", {})
-        long_reinforcement = extraction_data["longitudinal_reinforcement"]
-        trans_reinforcement = extraction_data.get("transverse_reinforcement", [])
+        try:
+            # Defensive checks for None values
+            if extraction_data.get("geometry") is None:
+                raise ValueError("geometry field is None in extraction_data")
+            if extraction_data.get("longitudinal_reinforcement") is None:
+                raise ValueError("longitudinal_reinforcement field is None in extraction_data")
+
+            geometry = extraction_data["geometry"]
+            concrete_specs = extraction_data.get("concrete_specifications") or {}
+            long_reinforcement = extraction_data["longitudinal_reinforcement"]
+            trans_reinforcement = extraction_data.get("transverse_reinforcement") or []
+
+            # Filter out None values from lists
+            trans_reinforcement = [item for item in trans_reinforcement if item is not None]
+            long_reinforcement = [item for item in long_reinforcement if item is not None]
+        except Exception as e:
+            import json
+            print(f"\n{'='*80}")
+            print(f"ERROR in generate_complete_geometry:")
+            print(f"Exception: {type(e).__name__}: {str(e)}")
+            print(f"extraction_data type: {type(extraction_data)}")
+            print(f"extraction_data content:")
+            print(json.dumps(extraction_data, indent=2, default=str))
+            print(f"{'='*80}\n")
+            raise
 
         width = geometry["width_mm"]
         depth = geometry["depth_mm"]
-        cover = concrete_specs.get("clear_cover_mm", 40.0)
+        cover = concrete_specs.get("clear_cover_mm") or 40.0
 
         result = {
             "longitudinal_bars": [],
@@ -289,7 +310,7 @@ class GeometryCalculator:
             bars = self.calculate_longitudinal_bars(
                 width_mm=width,
                 depth_mm=depth,
-                bar_diameter_mm=long_bar_group["bar_diameter_mm"],
+                bar_diameter_mm=long_bar_group.get("bar_diameter_mm") or 25.4,  # Default to 1 inch
                 bar_count=long_bar_group["bar_count"],
                 bar_x_columns=long_bar_group["bar_x_columns"],
                 bar_y_matrix=long_bar_group["bar_y_matrix"],
@@ -301,9 +322,10 @@ class GeometryCalculator:
         for stirrup_data in trans_reinforcement:
             if stirrup_data["stirrup_shape"] == "rectangular":
                 # Get internal dimensions
-                if stirrup_data.get("stirrup_dimensions"):
-                    internal_w = stirrup_data["stirrup_dimensions"].get("span_width_mm", width - 2 * cover)
-                    internal_d = stirrup_data["stirrup_dimensions"].get("span_depth_mm", depth - 2 * cover)
+                stirrup_dims = stirrup_data.get("stirrup_dimensions") or {}
+                if stirrup_dims:
+                    internal_w = stirrup_dims.get("span_width_mm", width - 2 * cover)
+                    internal_d = stirrup_dims.get("span_depth_mm", depth - 2 * cover)
                 else:
                     internal_w = width - 2 * cover
                     internal_d = depth - 2 * cover
@@ -314,18 +336,19 @@ class GeometryCalculator:
                 )
 
                 # Generate stirrup at each Z position
+                stirrup_diameter = stirrup_data.get("bar_diameter_mm") or 12.7  # Default to 1/2 inch
                 for idx, z_pos in enumerate(z_positions):
                     path_points = self.calculate_rectangular_stirrup(
                         internal_width_mm=internal_w,
                         internal_depth_mm=internal_d,
-                        bar_diameter_mm=stirrup_data["bar_diameter_mm"],
+                        bar_diameter_mm=stirrup_diameter,
                         z_position=z_pos
                     )
 
                     stirrup = StirrupGeometry(
                         stirrup_id=f"{stirrup_data.get('stirrup_id', 'stirrup')}_{idx}",
                         path_points=path_points,
-                        diameter_mm=stirrup_data["bar_diameter_mm"],
+                        diameter_mm=stirrup_diameter,
                         shape=stirrup_data["stirrup_shape"],
                         z_position=z_pos
                     )
